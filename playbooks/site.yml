@@ -1,0 +1,28 @@
+---
+
+# Update all
+- name: update_all
+  ansible.builtin.import_playbook: all.yml
+
+# Configure Servers
+
+- name: qianbei.nikssk.id.lv.yml
+  ansible.builtin.import_playbook: qianbei.nikssk.id.lv.yml
+
+- name: tan.nikssk.id.lv.yml
+  ansible.builtin.import_playbook: tan.nikssk.id.lv.yml
+
+# Configure DB
+
+- name: db.nikssk.id.lv.yml
+  ansible.builtin.import_playbook: db.nikssk.id.lv.yml
+
+# Configure Monitoring
+
+- name: monitor.nikssk.id.lv.yml
+  ansible.builtin.import_playbook: monitor.nikssk.id.lv.yml
+
+# Configure Dockers
+
+- name: docker.nikssk.id.lv.yml
+  ansible.builtin.import_playbook: docker.nikssk.id.lv.yml

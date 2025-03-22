@@ -1,0 +1,5 @@
+.vscode/
+collections/
+vault_pass.txt
+hosts.yml
+ansible.cfg

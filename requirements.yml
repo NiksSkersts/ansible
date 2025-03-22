@@ -1,0 +1,83 @@
+---
+roles:
+
+  - name: niksskersts.ansible-role-vm
+    src: ssh://git@github.com/NiksSkersts/ansible-role-vm.git
+    version: main
+    scm: git
+
+  - name: niksskersts.ansible-proxmox-server
+    src: ssh://git@github.com/NiksSkersts/ansible-proxmox-server.git
+    version: main
+    scm: git
+
+  - name: niksskersts.ansible-role-caddy
+    src: ssh://git@github.com/NiksSkersts/ansible-role-caddy.git
+    version: main
+    scm: git
+
+  - name: niksskersts.ansible-role-docker
+    src: ssh://git@github.com/NiksSkersts/ansible-role-docker.git
+    version: main
+    scm: git
+
+  - name: niksskersts.ansible-role-nfs-server
+    src: ssh://git@github.com/NiksSkersts/ansible-role-nfs-server.git
+    version: main
+    scm: git
+
+  - name: niksskersts.ansible-role-psql
+    src: ssh://git@github.com/NiksSkersts/ansible-role-psql.git
+    version: main
+    scm: git
+
+#  - name: niksskersts.ansible-role-zabbix
+#    src: ssh://git@github.com/NiksSkersts/ansible-role-zabbix.git
+#    version: main
+#    scm: git
+
+  - name: 'geerlingguy.postgresql'
+
+  - name: 'geerlingguy.docker'
+
+  - name: 'geerlingguy.apache'
+
+  - name: 'geerlingguy.php'
+
+collections:
+
+  - name: 'ansible.posix'
+    version: '*'
+
+  - name: 'ansible.utils'
+    version: '*'
+
+  - name: 'community.crypto'
+    version: '*'
+
+  - name: 'community.docker'
+    version: '*'
+
+  - name: 'community.general'
+    version: '*'
+
+  - name: 'community.libvirt'
+    version: '*'
+
+  - name: 'community.mysql'
+    version: '*'
+
+  - name: 'community.postgresql'
+    version: '*'
+
+  - name: 'community.rabbitmq'
+    version: '*'
+  
+  - name: community.zabbix
+    version: '*'
+
+  - name: 'debops.debops'
+    version: '*'
+
+  - name: nginxinc.nginx_core
+    version: '*'

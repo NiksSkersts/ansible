@@ -1,0 +1,10 @@
+---
+
+- name: "PROXMOX: Configure"
+  hosts: qianbei.nikssk.id.lv
+  gather_facts: true
+  roles:
+    - role: niksskersts.ansible-proxmox-server
+  tasks:
+    - meta: end_play
+

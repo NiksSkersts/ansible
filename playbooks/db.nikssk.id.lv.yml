@@ -1,0 +1,55 @@
+---
+
+- name: "Configure DB.DAREN.NIKSSK.ID.lV"
+  hosts: db.nikssk.id.lv
+  gather_facts: true
+  roles:
+    - role: niksskersts.ansible-role-vm
+
+    - role: niksskersts.ansible-role-psql
+      postgres_users_no_log: true
+      postgresql_global_config_options:
+        - option: unix_socket_directories
+          value: '{{ postgresql_unix_socket_directories | join(",") }}'
+        - option: log_directory
+          value: 'log'
+        - option: listen_addresses
+          value: '*'
+        - option: max_connections
+          value: '100'
+      postgresql_hba_entries:
+        - { type: local, database: all, user: postgres, auth_method: peer }
+        - { type: local, database: all, user: all, auth_method: peer }
+        - { type: host, database: all, user: all, address: '127.0.0.1/32', auth_method: md5 }
+        - { type: host, database: all, user: zbx_monitor, address: all, auth_method: md5 }
+        - { type: host, database: "{{ zabbix.db_name }}", user: "{{ zabbix.db_user }}", address: '192.168.100.11/32', auth_method: md5 }
+        - { type: host, database: all, replication, user: replication, address: 'localhost', auth_method: md5 }
+        - { type: host, database: all, user: all, address: '192.168.100.100/32', auth_method: md5 }
+      postgresql_users:
+        - name: "{{ zabbix.db_mon_user }}"
+          password: "{{ zabbix.db_mon_pass }}"
+        - name: "{{ bitwarden.db_user }}"
+          password: "{{ bitwarden.db_pass }}"
+        - name: "{{ notes.db_user }}"
+          password: "{{ notes.db_pass }}"
+        - name: "{{ grafana.db_user }}"
+          password: "{{ grafana.db_pass }}"
+        - name: "{{ miniflux.db_user }}"
+          password: "{{ miniflux.db_pass }}"
+        - name: "{{ zabbix.db_user }}"
+          password: "{{ zabbix.db_pass }}"
+          role_attr_flags: INHERIT
+        - name: "{{ db_common.db_replication_user }}"
+          password: "{{ db_common.db_replication_pass }}"
+          role_attr_flags: Replication
+      postgresql_databases:
+        - name: "{{ bitwarden.db_name }}"
+          owner: "{{ bitwarden.db_user }}"
+        - name: "{{ notes.db_name }}"
+          owner: "{{ notes.db_user }}"
+        - name: "{{ grafana.db_name }}"
+          owner: "{{ grafana.db_user }}"
+        - name: "{{ miniflux.db_name }}"
+          owner: "{{ miniflux.db_user }}"
+        # - name: zabbix
+        #  owner: zabbix

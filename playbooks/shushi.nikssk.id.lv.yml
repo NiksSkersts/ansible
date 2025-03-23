@@ -7,6 +7,7 @@
     shushi_base:
       - cockpit
       - screenfetch
+      - python3-yaml
   roles:
     - role: niksskersts.ansible-role-vm
       pkgs: '{{ base_pkgs | union(ansible_base) | union(shushi_base)}}'

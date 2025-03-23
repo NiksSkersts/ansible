@@ -3,14 +3,11 @@
 - name: "Dockers: Configure docker.nikssk.id.lv"
   hosts: shushi.nikssk.id.lv
   gather_facts: true
+  vars:
+    shushi_base:
+      - cockpit
+      - screenfetch
   roles:
     - role: niksskersts.ansible-role-vm
+      pkgs: '{{ base_pkgs | union(ansible_base) | union(shushi_base)}}'
     - role: niksskersts.ansible-role-docker
-    - role: niksskersts.ansible-role-nfs-server
-  tasks:
-
-    - name: Deploy software
-      ansible.builtin.apt:
-        name:
-          - cockpit
-          - screenfetch

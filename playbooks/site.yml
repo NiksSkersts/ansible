@@ -9,6 +9,9 @@
 - name: qianbei.nikssk.id.lv.yml
   ansible.builtin.import_playbook: qianbei.nikssk.id.lv.yml
 
+- name: shushi.nikssk.id.lv.yml
+  ansible.builtin.import_playbook: shushi.nikssk.id.lv.yml
+
 - name: tan.nikssk.id.lv.yml
   ansible.builtin.import_playbook: tan.nikssk.id.lv.yml
 
@@ -17,12 +20,15 @@
 - name: db.nikssk.id.lv.yml
   ansible.builtin.import_playbook: db.nikssk.id.lv.yml
 
-# Configure Monitoring
+# Configure Monitoring server
 
 - name: monitor.nikssk.id.lv.yml
   ansible.builtin.import_playbook: monitor.nikssk.id.lv.yml
 
 # Configure Dockers
 
-- name: docker.nikssk.id.lv.yml
-  ansible.builtin.import_playbook: docker.nikssk.id.lv.yml
+- name: docker0.nikssk.id.lv.yml
+  ansible.builtin.import_playbook: docker0.nikssk.id.lv.yml
+
+- name: docker1.nikssk.id.lv.yml
+  ansible.builtin.import_playbook: docker1.nikssk.id.lv.yml

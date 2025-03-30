@@ -3,10 +3,12 @@
 - name: "Configure DB.DAREN.NIKSSK.ID.lV"
   hosts: db.nikssk.id.lv
   gather_facts: true
+  collections:
+    - niksskersts.vm
   roles:
-    - role: niksskersts.ansible-role-vm
+    - role: niksskersts.vm.base
 
-    - role: niksskersts.ansible-role-psql
+    - role: niksskersts.vm.psql
       postgres_users_no_log: true
       postgresql_global_config_options:
         - option: unix_socket_directories

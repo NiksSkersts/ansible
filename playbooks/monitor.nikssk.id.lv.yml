@@ -3,8 +3,10 @@
 - name: "Configure virtual machines"
   hosts: monitoring
   gather_facts: true
+  collections:
+    - niksskersts.vm
   roles:
-    - role: niksskersts.ansible-role-vm
+    - role: niksskersts.vm.base
   tasks:
 
     - name: Ensure multiple locales exist

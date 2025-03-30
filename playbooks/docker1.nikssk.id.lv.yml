@@ -3,15 +3,16 @@
 - name: "Dockers: Configure docker.nikssk.id.lv"
   hosts: docker1.nikssk.id.lv
   gather_facts: true
+  collections:
+    - niksskersts.vm
   roles:
-    - role: niksskersts.ansible-role-vm
-      pkgs: '{{ base_pkgs }}'
+    - role: niksskersts.vm.base
 
-    - role: niksskersts.ansible-role-docker
+    - role: niksskersts.vm.docker
       wipe: false
       pull_policy: always
 
-    - role: niksskersts.ansible-role-caddy
+    - role: niksskersts.vm.caddy
       get_cert_cloudflare: false
       domain: '{{ cloudflare.cloud_domain }}'
       cloudflare_token: '{{ cloudflare.token }}'

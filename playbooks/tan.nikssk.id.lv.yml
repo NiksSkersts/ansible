@@ -3,10 +3,14 @@
 - name: "Configure tan.nikssk.id.lv"
   hosts: tan.nikssk.id.lv
   gather_facts: true
+  vars:
+    - pkgs: []
+  collections:
+    - niksskersts.vm
   roles:
-    - role: niksskersts.ansible-role-vm
+    - role: niksskersts.vm.base
 
-    - role: niksskersts.ansible-role-psql
+    - role: niksskersts.vm.psql
       postgresql_global_config_options:
         - option: unix_socket_directories
           value: '{{ postgresql_unix_socket_directories | join(",") }}'
@@ -34,9 +38,9 @@
         - name: "{{ wikijs.db_name }}"
           owner: "{{ wikijs.db_user }}"
 
-    - role: niksskersts.ansible-role-docker
+    - role: niksskersts.vm.docker
 
-    - role: niksskersts.ansible-role-caddy
+#    - role: niksskersts.vm.caddy
 
   tasks:
 

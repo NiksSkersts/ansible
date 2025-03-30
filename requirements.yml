@@ -1,41 +1,6 @@
 ---
 roles:
 
-  - name: niksskersts.ansible-role-vm
-    src: ssh://git@github.com/NiksSkersts/ansible-role-vm.git
-    version: main
-    scm: git
-
-  - name: niksskersts.ansible-proxmox-server
-    src: ssh://git@github.com/NiksSkersts/ansible-proxmox-server.git
-    version: main
-    scm: git
-
-  - name: niksskersts.ansible-role-caddy
-    src: ssh://git@github.com/NiksSkersts/ansible-role-caddy.git
-    version: main
-    scm: git
-
-  - name: niksskersts.ansible-role-docker
-    src: ssh://git@github.com/NiksSkersts/ansible-role-docker.git
-    version: main
-    scm: git
-
-  - name: niksskersts.ansible-role-nfs-server
-    src: ssh://git@github.com/NiksSkersts/ansible-role-nfs-server.git
-    version: main
-    scm: git
-
-  - name: niksskersts.ansible-role-psql
-    src: ssh://git@github.com/NiksSkersts/ansible-role-psql.git
-    version: main
-    scm: git
-
-#  - name: niksskersts.ansible-role-zabbix
-#    src: ssh://git@github.com/NiksSkersts/ansible-role-zabbix.git
-#    version: main
-#    scm: git
-
   - name: 'geerlingguy.postgresql'
 
   - name: 'geerlingguy.docker'
@@ -45,6 +10,14 @@ roles:
   - name: 'geerlingguy.php'
 
 collections:
+
+  - name: https://github.com/NiksSkersts/proxmox
+    type: git
+    version: main
+
+  - name: https://github.com/NiksSkersts/vm
+    type: git
+    version: main
 
   - name: 'ansible.posix'
     version: '*'

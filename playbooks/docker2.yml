@@ -1,20 +1,17 @@
 ---
 
 - name: "Dockers: Configure docker.nikssk.id.lv"
-  hosts: docker0.nikssk.id.lv
+  hosts: docker2.nikssk.id.lv
   gather_facts: true
-  collections:
-    - niksskersts.vm
   roles:
+    - role: base
 
-    - role: niksskersts.vm.base
-
-    - role: niksskersts.vm.docker
+    - role: docker
       wipe: false
       pull_policy: always
 
-    - role: niksskersts.vm.caddy
-      get_cert_cloudflare: false
+    - role: caddy
+      get_cert_cloudflare: true
       domain: '{{ cloudflare.cloud_domain }}'
       cloudflare_token: '{{ cloudflare.token }}'
       certbot_email: '{{ smtp.username }}'
@@ -24,8 +21,3 @@
       caddy_config_path: '{{ caddy.config_path }}'
       caddy_config_tls: '{{ caddy.tls }}'
       caddy_defs: '{{ docker_defs }}'
-      backend_cert_defs:
-        - bitwarden:
-          dest: '{{ bitwarden.backend_cert_path }}'
-          content: '{{ bitwarden.backend_cert }}'
-          mode: '650'

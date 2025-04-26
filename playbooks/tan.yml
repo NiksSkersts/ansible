@@ -5,12 +5,10 @@
   gather_facts: true
   vars:
     - pkgs: []
-  collections:
-    - niksskersts.vm
   roles:
-    - role: niksskersts.vm.base
+    - role: base
 
-    - role: niksskersts.vm.psql
+    - role: psql
       postgresql_global_config_options:
         - option: unix_socket_directories
           value: '{{ postgresql_unix_socket_directories | join(",") }}'
@@ -38,9 +36,9 @@
         - name: "{{ wikijs.db_name }}"
           owner: "{{ wikijs.db_user }}"
 
-    - role: niksskersts.vm.docker
+    - role: docker
 
-#    - role: niksskersts.vm.caddy
+#    - role: caddy
 
   tasks:
 

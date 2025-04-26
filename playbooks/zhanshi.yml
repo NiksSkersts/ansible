@@ -1,0 +1,14 @@
+---
+
+- name: Configure Proxmox host
+  hosts: zhanshi.nikssk.id.lv
+  gather_facts: true
+  roles:
+    - role: server
+      vm_group: 'zhanshi_vm'
+      lxc_group: 'zhanshi_lxc'
+
+  tasks:
+
+    - name: End play
+      ansible.builtin.meta: end_play

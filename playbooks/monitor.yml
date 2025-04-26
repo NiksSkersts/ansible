@@ -3,10 +3,8 @@
 - name: "Configure virtual machines"
   hosts: monitoring
   gather_facts: true
-  collections:
-    - niksskersts.vm
   roles:
-    - role: niksskersts.vm.base
+    - role: base
   tasks:
 
     - name: Ensure multiple locales exist

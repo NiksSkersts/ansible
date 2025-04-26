@@ -1,13 +1,14 @@
 ---
-
-# Update all
-- name: update_all
-  ansible.builtin.import_playbook: all.yml
-
 # Configure Servers
 
 - name: qianbei.nikssk.id.lv.yml
   ansible.builtin.import_playbook: qianbei.nikssk.id.lv.yml
+
+- name: zhanshi.nikssk.id.lv.yml
+  ansible.builtin.import_playbook: zhanshi.yml
+
+- name: fashi.nikssk.id.lv.yml
+  ansible.builtin.import_playbook: fashi.yml
 
 - name: shushi.nikssk.id.lv.yml
   ansible.builtin.import_playbook: shushi.nikssk.id.lv.yml

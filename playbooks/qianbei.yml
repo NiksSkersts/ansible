@@ -3,11 +3,10 @@
 - name: Configure Proxmox host
   hosts: qianbei.nikssk.id.lv
   gather_facts: true
-  collections:
-    - niksskersts.proxmox
   roles:
-    - role: niksskersts.proxmox.server
+    - role: server
       vm_group: 'qianbei_vm'
+      lxc_group: 'qianbei_lxc'
 
   tasks:
 

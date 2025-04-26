@@ -3,15 +3,13 @@
 - name: "Dockers: Configure docker.nikssk.id.lv"
   hosts: shushi.nikssk.id.lv
   gather_facts: true
-  collections:
-    - niksskersts.vm
   vars:
     shushi_base:
       - cockpit
       - screenfetch
       - python3-yaml
   roles:
-    - role: niksskersts.vm.base
+    - role: base
       pkgs: '{{ base_pkgs | union(ansible_base) | union(shushi_base)}}'
 
-    - role: niksskersts.vm.docker
+    - role: docker

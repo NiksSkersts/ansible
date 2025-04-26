@@ -1,0 +1,103 @@
+---
+
+- name: Check if LXC exists
+  ignore_errors: true
+  community.general.proxmox:
+    api_user: "{{ proxmox.api_user }}"
+    api_password: "{{ proxmox.api_password }}"
+    api_host: "{{ proxmox.api_host }}"
+    api_token_id: "{{ proxmox.token_id | default(omit) }}"
+    api_token_secret: "{{ proxmox.token_secret | default(omit) }}"
+    vmid: "{{ hostvars[item].vm_id }}"
+    node: "{{ ansible_hostname }}"
+    hostname: "{{ hostvars[item].name }}"
+  register: "vm_status"
+
+- name: Download Template
+  when:
+    - vm_status.failed
+  block:
+
+    # This will also ensure that the image does not get downloaded again for further VMs.
+    # Allows for checksum validation.
+    - name: "Download container image."
+      vars:
+        templ_name: debian-12-standard_12.7-1_amd64.tar.zst
+        templ: 'local:vztmpl/{{ templ_name }}'
+      retries: 3
+      community.general.proxmox_template:
+        node: "{{ ansible_hostname }}"
+        api_user: "{{ proxmox.api_user }}"
+        api_password: "{{ proxmox.api_password }}"
+        api_host: "{{ proxmox.api_host }}"
+        storage: local
+        content_type: vztmpl
+        template: "{{ templ_name }}"
+
+  # Create a new VM only when vm_status returns empty array.
+- name: Create LXC
+  when:
+    - vm_status.failed
+  block:
+
+    # TODO: Skip VM's if ID exists.
+    - name: 'Create virtual machine'
+      vars:
+        templ_name: debian-12-standard_12.7-1_amd64.tar.zst
+        templ: 'local:vztmpl/{{ templ_name }}'
+      community.general.proxmox:
+        timeout: 1000
+        state: 'present'
+        api_user: "{{ proxmox.api_user }}"
+        api_password: "{{ proxmox.api_password }}"
+        api_host: "{{ proxmox.api_host }}"
+        node: "{{ ansible_hostname }}"
+        hostname: "{{ hostvars[item].name }}"
+        vmid: "{{ hostvars[item].vm_id }}"
+        onboot: true
+        cores: "{{ hostvars[item].cpu_cores }}"
+        memory: "{{ hostvars[item].vm_memory }}"
+        swap: "{{ hostvars[item].vm_memory }}"
+        ostemplate: "{{ templ }}"
+        storage: "local-zfs"
+        password: "{{ proxmox.api_password }}"
+        searchdomain: "{{ ansible_facts['fqdn'] }}"
+        nameserver: "{{ hostvars[item].dns }}"
+        pubkey: "{{ ssh.pub }}"
+
+    - name: "Wait for VM create"
+      ansible.builtin.wait_for:
+        timeout: 10
+
+    - name: Add cloud-init ipconfig
+      community.general.proxmox:
+        update: true
+        api_user: "{{ proxmox.api_user }}"
+        api_password: "{{ proxmox.api_password }}"
+        api_host: "{{ proxmox.api_host }}"
+        node: "{{ ansible_hostname }}"
+        hostname: "{{ hostvars[item].name }}"
+        vmid: "{{ hostvars[item].vm_id }}"
+        netif: '{"net{{ inner_item.id }}":"name=eth{{ inner_item.id }},bridge={{ inner_item.bridge }},firewall=0,ip={{ inner_item.ip }}/{{ inner_item.subnet }}{% if hostvars[item].1.gw is defined and hostvars[item].1.gw %},gw={{ inner_item.gw }}{%endif%}"}'
+      loop_control:
+        loop_var: inner_item
+      loop: "{{ hostvars[item].netn }}"
+
+    # Start the virtual machine.
+    - name: "Start VM."
+      community.general.proxmox:
+        api_user: "{{ proxmox.api_user }}"
+        api_password: "{{ proxmox.api_password }}"
+        api_host: "{{ proxmox.api_host }}"
+        vmid: "{{ hostvars[item].vm_id }}"
+        state: started
+
+    # It will delay this task for 60 seconds and timeout after 180.
+    # This task will finish when port 22 becomes active.
+    # Delay is required to ensure that port 22 does not become active before cloud-init is ready.
+    - name: "Wait for VM to start."
+      ansible.builtin.wait_for:
+        host: "{{ hostvars[item.name + '.' + ansible_facts['fqdn']]['ansible_host'] }}"
+        port: 22
+        delay: 60
+        timeout: 180

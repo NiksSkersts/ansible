@@ -1,0 +1,14 @@
+---
+template_destination_path: /var/lib/vz/template/qemu
+cloud_image_path: null
+
+# Override these variables to authentificate with Proxmox API.
+proxmox:
+  api_user: null
+  api_password: null
+  api_host: null
+  token_id: null
+  api_token_secret: null
+
+proxmox_defs: []
+token_defs: []

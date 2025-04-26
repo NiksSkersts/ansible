@@ -1,0 +1,21 @@
+---
+
+- name: Creating Users
+  loop: "{{ proxmox_defs }}"
+  when: proxmox_defs | length > 0
+  ansible.builtin.include_tasks: "create_proxmox_user.yml"
+
+- name: Creating Tokens
+  loop: "{{ token_defs }}"
+  when: token_defs | length > 0
+  ansible.builtin.include_tasks: "create_proxmox_token.yml"
+
+- name: Creating LXCs
+  loop: "{{ groups[lxc_group] }}"
+  when: lxc_group is defined and false
+  ansible.builtin.include_tasks: "deploy_lxc.yml"
+
+- name: Creating VMs
+  loop: "{{ groups[vm_group] }}"
+  when: vm_group is defined
+  ansible.builtin.include_tasks: "deploy_vm.yml"

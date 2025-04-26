@@ -1,0 +1,44 @@
+---
+# tasks file for vm-role-zabbix-agent
+
+- name: Import Zabbix role
+  import_role:
+    - role: community.zabbix.zabbix_agent
+      zabbix_agent_server: 192.168.100.11, localhost
+      zabbix_agent_serveractive: 192.168.100.11
+      zabbix_agent2: true
+      zabbix_agent_chassis: true
+      zabbix_agent_tlsconnect: psk
+      zabbix_agent_tlsaccept: psk
+      zabbix_agent_tlspskidentity: "{{ zabbix.tlspskidentity }}"
+      zabbix_agent_tlspskidentity_file: "{{ zabbix.tlspskidentityfile }}"
+      zabbix_agent_tlspsk_secret: "{{ zabbix.tlspsksecret }}"
+      zabbix_agent_tlspskfile: "{{ zabbix.tlspskfile }}"
+      zabbix_agent_visible_hostname: "{{ inventory_hostname }}"
+      zabbix_agent_hostinterface: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address']  }}"
+      zabbix_agent_hostname: "{{ ansible_facts['fqdn'] }}"
+      zabbix_agent_hostmetadata: ':osname={{ ansible_os_family }}:env=prod:role={{ inventory_hostname_short }}'
+
+
+# For whatever reason zabbix agent role assigns zabbix group to DMI, but does not give read permission to the said group.
+- name: Ensure zabbix can access DMI info
+  when: "'servers' in group_names"
+  ansible.builtin.file:
+    path: /sys/firmware/dmi/tables/DMI
+    owner: root
+    group: zabbix
+    mode: "440"
+
+- name: Restart Zabbix agent
+  ansible.builtin.service:
+    name: zabbix-agent2
+    state: restarted
+
+- name: "DB MONITORING: Grant role pg_monitor to zb_monitor user"
+  when: "'databases' in group_names"
+  become: true
+  become_user: postgres
+  community.postgresql.postgresql_membership:
+    group: pg_monitor
+    target_roles: zbx_monitor
+    state: present

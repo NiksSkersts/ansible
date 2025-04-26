@@ -1,0 +1,9 @@
+---
+# defaults file for vm-role-psql
+
+##Examples
+#nfs_backup: true
+#nfs_dev: "nas.local:/mnt/pool/folder"
+#backup_path: /backup
+#nfs_opts: "rw,sync,hard,noatime,rsize=8192,wsize=8192,tcp,timeo=14,nfsvers=4"
+#nfs_backup_delete_old: null # Change to find supported time unit. For example, +10 or 10 or -10.

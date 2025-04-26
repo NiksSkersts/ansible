@@ -1,0 +1,39 @@
+---
+# defaults file for vm-role-caddy
+
+## Exmaples
+#get_cert_cloudflare: false
+#domain: example.com
+#cloudflare_token: OVERRIDE_THIS_VARIABLE
+#certbot_email: OVERRIDE_THIS_VARIABLE
+#cert_path: /etc/letsencrypt
+#caddy_user: www-data
+#caddy_group: www-data
+#caddy_config_path: /etc/caddy/Caddyfile
+#caddy_config_tls: tls /etc/letsencrypt/live/example.com/fullchain.pem /etc/letsencrypt/live/example.com/privkey.pem
+#
+## Idea is that we don't use LetsEncrypt on backend certs, but instead make self-signed certificates that are imported into Caddy for it to trust.
+## Disabling SSL verification could work as well.
+#backend_cert_defs: []
+##  - example:
+##    dest: /etc/caddy/example.crt
+##    content: |
+##      CERT CONTENTS
+##    mode: '650'
+#
+## If you are using ansible-role-docker then caddy_defs can be substituted by docker_defs.
+## caddy_defs: '{{ docker_defs }}'
+#caddy_defs: []
+##  - example.com:
+##    domain: example.com
+##    reverse_proxy_path: localhost:8081
+##    transport: |
+##      transport http {
+##        tls_trusted_ca_certs /etc/caddy/example.crt
+##        tls_server_name example.com
+##      }
+##    request_body: |
+##      request_body {
+##        max_size 1024MB
+##      }
+#

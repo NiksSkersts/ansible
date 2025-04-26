@@ -1,0 +1,30 @@
+---
+
+- name: "Configure user: {{ item.user }}"
+  block:
+
+    - name: Add group
+      ansible.builtin.group:
+        name: "{{ item.group | default(item.user) }}"
+        state: "{{ item.state | default('absent') }}"
+        gid: "{{ item.gid | default(omit) }}"
+
+    - name: Add user
+      ansible.builtin.user:
+        state: "{{ item.state | default('absent') }}"
+        name: "{{ item.user }}"
+        uid: "{{ item.uid | default(omit) }}"
+        create_home: "{{ item.home | default(false) }}"
+        group: "{{ item.group | default(item.user) }}"
+        groups: "{{ item.groups | default(omit) }}"
+        shell: "{{ item.shell | default('/sbin/nologin')}}"
+        system: "{{ item.system | default(false) }}"
+        password: "{{ item.password | default(omit) | password_hash('sha512') }}"
+        update_password: '{{ item.update_policy | default("on_create") }}'
+
+    - name: set ssh pub keys
+      when: item.ssh_pub is defined
+      ansible.posix.authorized_key:
+        user: "{{ item.user }}"
+        state: "{{ item.state | default('absent') }}"
+        key: "{{ item.ssh_pub }}"

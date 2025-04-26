@@ -1,0 +1,23 @@
+---
+
+- name: Deploy Docker container
+  block:
+
+    - name: "Deploy {{ item.name }} environment" 
+      when: item.env is defined
+      ansible.builtin.copy:
+        content: '{{ item.env_definition }}'
+        dest: '{{ item.env }}'
+        mode: '0640'
+        owner: root
+        group: root
+
+    # Normally putting loop variables in "name:" does not work because they are not yet in scope.
+    # In this case it works. I guess variables are in scope when the loop happens to "import_task"
+    - name: "Deploy {{ item.name }}"
+      community.docker.docker_compose_v2:
+        env_files:  "{{ item.env | default(omit) }}"
+        project_name: "{{ item.name }}"
+        state: "{{ item.state | default('absent') }}"
+        definition: "{{ item.definition }}"
+        pull: "{{ pull_policy | default(omit) }}"

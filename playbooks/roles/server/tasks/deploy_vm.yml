@@ -1,0 +1,242 @@
+---
+
+- name: "{{ hostvars[item].name }} | Check if VM exists"
+  community.general.proxmox_vm_info:
+    api_user: "{{ proxmox.api_user }}"
+    api_password: "{{ proxmox.api_password }}"
+    api_host: "{{ proxmox.api_host }}"
+    api_token_id: "{{ proxmox.token_id | default(omit) }}"
+    api_token_secret: "{{ proxmox.token_secret | default(omit) }}"
+    vmid: "{{ hostvars[item].vm_id }}"
+    node: "{{ ansible_hostname }}"
+    name: "{{ hostvars[item].name }}"
+  register: "vm_status"
+
+- name: Download Template
+  vars:
+    # Select the file name without ext.
+    template_name: '{{ hostvars[item].template | basename | regex_replace("^([^\.]*).*", "\1") }}'
+    template_ext: '{{ hostvars[item].template | basename | regex_replace(".(\w+)$", "\1") }}'
+  block:
+
+    - name: "Download template"
+      retries: 3
+      ansible.builtin.get_url:
+        url: "{{ hostvars[item].template }}"
+        dest: "{{ hostvars[item].template_destination_path }}"
+        checksum: "{{ hostvars[item].template_sha512 }}"
+
+    - name: Deal with Archives
+      when: 'hostvars[item].template | basename | regex_search("\.(zip|tar|xz|gz|bz2|7z)$")'
+      block:
+        
+        - name: "Ensure exists {{ hostvars[item].template_destination_path }}/{{ template_name }}"
+          ansible.builtin.file:
+            path: "{{ hostvars[item].template_destination_path }}/{{ template_name }}"
+            state: directory
+        
+        # Unarchive the downloaded file.
+        # Will overwrite any changes to the image in dest.
+        # TODO find less expensive way to do this
+        - name: "Unarchive the downloaded archive."
+          ansible.builtin.unarchive:
+            src: "{{ hostvars[item].template_destination_path }}/{{hostvars[item].template | basename}}"
+            dest: "{{ hostvars[item].template_destination_path }}/{{ template_name }}"
+            remote_src: true
+            mode: '0644'
+            owner: root
+            group: root
+
+        - name: "Find the name of the template file"
+          ansible.builtin.find:
+            paths: "{{ hostvars[item].template_destination_path }}/{{ template_name }}/"
+            recurse: true
+            file_type: file
+            use_regex: false
+            patterns:
+              - '*.qcow2'
+              - '*.raw'
+          register: found_files
+
+        - name: Set cloud_image_path
+          ansible.builtin.set_fact: 
+            cloud_image_path: "{{ found_files.files[0].path }}"
+
+    - name: Deal with QCOW2 and RAW files
+      when: 'hostvars[item].template | basename | regex_search("\.(qcow2|raw)$")'
+      block:
+
+        - name: Set cloud_image_path
+          ansible.builtin.set_fact: 
+            cloud_image_path: '{{ hostvars[item]template_destination_path }}/{{ hostvars[item].template | basename }}'
+
+  # Create a new VM only when vm_status returns empty array.
+- name: "{{ hostvars[item].name }} | Stop and remove VM"
+  when: hostvars[item].remove | default(false)
+  block:
+
+    # Controlled by vm_defs[n].remove hostvars[item]. Set to true to remove VMs before deploying.
+    - name: "{{ hostvars[item].name }} | Stop VM "
+      community.general.proxmox_kvm:
+        api_user: "{{ proxmox.api_user }}"
+        api_password: "{{ proxmox.api_password }}"
+        api_host: "{{ proxmox.api_host }}"
+        name: "{{ hostvars[item].name }}"
+        vmid: "{{ hostvars[item].vm_id }}"
+        node: "{{ ansible_hostname }}"
+        state: stopped
+
+    # Controlled by vm_defs[n].remove hostvars[item]. Set to true to remove VMs before deploying.
+    - name: "{{ hostvars[item].name }} | Remove VM "
+      community.general.proxmox_kvm:
+        api_user: "{{ proxmox.api_user }}"
+        api_password: "{{ proxmox.api_password }}"
+        api_host: "{{ proxmox.api_host }}"
+        name: "{{ hostvars[item].name }}"
+        vmid: "{{ hostvars[item].vm_id }}"
+        node: "{{ ansible_hostname }}"
+        state: absent
+
+  # Create a new VM only when vm_status returns empty array.
+- name: "{{ hostvars[item].name }} | Create VM"
+  block:
+
+    # TODO: Skip VM's if ID exists.
+    - name: "{{ hostvars[item].name }} | Create VM"
+      community.general.proxmox_kvm:
+        timeout: 1000
+        state: 'present'
+        api_user: "{{ proxmox.api_user }}"
+        api_password: "{{ proxmox.api_password }}"
+        api_host: "{{ proxmox.api_host }}"
+        node: "{{ ansible_hostname }}"
+        name: "{{ hostvars[item].name }}"
+        vmid: "{{ hostvars[item].vm_id }}"
+        agent: 1
+        onboot: true
+        bios: 'ovmf'
+        cores: "{{ hostvars[item].cpu_cores }}"
+        memory: "{{ hostvars[item].vm_memory }}"
+        efidisk0:
+          storage: "{{ hostvars[item].dest_disk | default(hostvars[item].default_pool) }}"
+          format: raw
+          efitype: 4m
+          pre_enrolled_keys: 1 # Set this to 0 to disable Secure Boot
+        ide:
+          ide2: "{{ hostvars[item].dest_disk | default(hostvars[item].default_pool) }}:cloudinit,format=raw"
+        machine: 'q35'
+        scsihw: 'virtio-scsi-single'
+        tpmstate0:
+          storage: "{{ hostvars[item].dest_disk | default(hostvars[item].default_pool) }}"
+        ostype: "l26"
+        serial:
+          serial0: 'socket'
+        vga: "serial0"
+
+    - name: "{{ hostvars[item].name }} | Assign disks to VM"
+      community.general.proxmox_disk:
+        api_user: "{{ proxmox.api_user }}"
+        api_password: "{{ proxmox.api_password }}"
+        api_host: "{{ proxmox.api_host }}"
+        name: "{{ hostvars[item].name }}"
+        vmid: "{{ hostvars[item].vm_id }}"
+        create: regular
+        disk: "{{ inner_item.disk_key }}"
+        backup: "{{ inner_item.disk_backup | default(omit) }}"
+        discard: "{{ inner_item.disk_discard | default(omit) }}"
+        format: "{{ inner_item.disk_format | default('raw')  }}"
+        storage: "{{ inner_item.disk_dest_pool | default(hostvars[item].default_pool) }}"
+        import_from: "{{ cloud_image_path if inner_item.id == 1 else omit }}"
+        size: "{{ inner_item.disk_size if inner_item.id != 1 else omit }}"
+        iothread : "{{ inner_item.iothread | default('true') }}"
+        state: "present"
+      loop_control:
+        loop_var: inner_item
+      loop: "{{ hostvars[item].diskn }}"
+
+    - name: "{{ hostvars[item].name }} | Assign network interfaces to VM"
+      community.general.proxmox_nic:
+        state: 'present'
+        api_user: "{{ proxmox.api_user }}"
+        api_password: "{{ proxmox.api_password }}"
+        api_host: "{{ proxmox.api_host }}"
+        name: "{{ hostvars[item].name }}"
+        vmid: "{{ hostvars[item].vm_id }}"
+        interface: "net{{ inner_item.id | default('net0')}}"
+        bridge: "{{ inner_item.bridge | default('vmbr0')}}"
+        tag: "{{ inner_item.tag | default(0) }}"
+        mtu: "{{ inner_item.mtu | default(1) }}"
+      loop_control:
+        loop_var: inner_item
+      loop: "{{ hostvars[item].netn }}"
+
+    - name: "{{ hostvars[item].name }} | Add cloud-init config"
+      community.general.proxmox_kvm:
+        api_user: "{{ proxmox.api_user }}"
+        api_password: "{{ proxmox.api_password }}"
+        api_host: "{{ proxmox.api_host }}"
+        node: "{{ ansible_hostname }}"
+        name: "{{ hostvars[item].name }}"
+        vmid: "{{ hostvars[item].vm_id }}"
+        update: true
+        ciuser: 'root'
+        cipassword: '{{ proxmox.cloudpass }}'
+        searchdomains: "{{ ansible_facts['fqdn'] }}"
+        nameservers: "{{ hostvars[item].dns }}"
+        sshkeys: "{{ ssh.pub }}"
+
+    - name: "{{ hostvars[item].name }} | Add cloud-init ipconfig"
+      community.general.proxmox_kvm:
+        api_user: "{{ proxmox.api_user }}"
+        api_password: "{{ proxmox.api_password }}"
+        api_host: "{{ proxmox.api_host }}"
+        node: "{{ ansible_hostname }}"
+        name: "{{ hostvars[item].name }}"
+        vmid: "{{ hostvars[item].vm_id }}"
+        update: true
+        ipconfig: '{"ipconfig{{ inner_item.id | default(0) }}":"ip={{ inner_item.ip }}/{{ inner_item.subnet }}{% if inner_item.gw is defined and inner_item.gw %},gw={{ inner_item.gw }}{%endif%}"}'
+      loop_control:
+        loop_var: inner_item
+      loop: "{{ hostvars[item].netn }}"
+
+    # Wait for 10 seconds to make sure that VM is not in 'locked' state.
+    - name: "{{ hostvars[item].name }} | Wait for VM create"
+      ansible.builtin.wait_for:
+        timeout: 10
+
+    # Resize disk to "{{ vm_disk_size }}" size. This is not an add function.
+    # Required only for boot disks.
+    - name: "{{ hostvars[item].name }} | Ensure disks resized"
+      when: inner_item.id == 1
+      community.general.proxmox_disk:
+        api_user: "{{ proxmox.api_user }}"
+        api_password: "{{ proxmox.api_password }}"
+        api_host: "{{ proxmox.api_host }}"
+        vmid: "{{ hostvars[item].vm_id }}"
+        disk: "{{ inner_item.disk_key }}"
+        size: "{{ inner_item.disk_size | default(vm.def_disk_size) }}"
+        state: 'resized'
+        timeout: 10
+      loop_control:
+        loop_var: inner_item
+      loop: "{{ hostvars[item].diskn }}"
+
+    # Start the virtual machine.
+    - name: "{{ hostvars[item].name }} | Start VM."
+      community.general.proxmox_kvm:
+        api_user: "{{ proxmox.api_user }}"
+        api_password: "{{ proxmox.api_password }}"
+        api_host: "{{ proxmox.api_host }}"
+        vmid: "{{ hostvars[item].vm_id }}"
+        state: started
+
+    # It will delay this task for 60 seconds and timeout after 180.
+    # This task will finish when port 22 becomes active.
+    # Delay is required to ensure that port 22 does not become active before cloud-init is ready.
+    - name: "{{ hostvars[item].name }} | Wait for VM to start."
+      when: false
+      ansible.builtin.wait_for:
+        host: "{{ hostvars[item].vm_id }}"
+        port: 22
+        delay: 60
+        timeout: 180

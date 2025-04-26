@@ -1,0 +1,13 @@
+---
+# defaults file for vm-role-docker
+#Examples
+#wipe: false
+#pull_policy: always
+#docker_packages:
+#  - "docker-{{ docker_edition }}"
+#  - "docker-{{ docker_edition }}-cli"
+#  - "docker-{{ docker_edition }}-rootless-extras"
+#docker_edition: 'ce'
+#docker_packages_state: present
+#docker_users: []
+#docker_defs: []

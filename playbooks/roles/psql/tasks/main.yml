@@ -1,0 +1,46 @@
+---
+# tasks file for vm-role-psql
+
+- name: "Deploy NFS backup"
+  when: nfs_backup | default(false)
+  block:
+
+    - name: "Install postgresql-client"
+      ansible.builtin.package:
+        name:
+          - postgresql-client
+        state: present
+
+    - name: "Mount NFS volume"
+      ansible.posix.mount:
+        src: "{{ nfs_dev }}"
+        path: "{{ backup_path }}"
+        opts: "{{ nfs_opts }}"
+        state: mounted
+        fstype: nfs
+        boot: true
+
+    - name: "Set up Cron (Backup job)"
+      ansible.builtin.cron:
+        name: "Task: pg_dumpall"
+        minute: "0"
+        hour: "0"
+        day: "*"
+        month: "*"
+        user: postgres
+        job: '/usr/bin/pg_dumpall > {{ backup_path }}/dump\_$(date +\%s).sql'
+
+    - name: "Set up Cron (Clear old backups)"
+      when: nfs_backup_delete_old is not null
+      ansible.builtin.cron:
+        name: "Task: find and delete"
+        minute: "0"
+        hour: "0"
+        day: "*"
+        month: "*"
+        user: postgres
+        job: '/usr/bin/find {{ backup_path }}/ -mtime {{ nfs_backup_delete_old }} -delete'
+
+- name: "Setup database"
+  ansible.builtin.include_role:
+    name: geerlingguy.postgresql

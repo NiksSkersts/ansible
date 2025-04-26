@@ -1,0 +1,59 @@
+---
+# tasks file for vm-role-zabbix-server
+
+- name: Ensure multiple locales exist
+  community.general.locale_gen:
+    name:           # Atleast one locale needs to exist on the server.
+      - en_GB.UTF-8
+      - en_US.UTF-8
+    state: present
+
+- name: "PACKAGES: base"
+  ansible.builtin.package:
+    name:
+      - postgresql-client # Required for DB setup and probably for access too.
+    state: present
+
+- name: "ZABBIX SRV: Configure base"
+  ansible.builtin.include_role:
+    name: community.zabbix.zabbix_server
+  vars:
+    zabbix_server_dbhost_run_install: false
+    zabbix_server_database_creation: false
+    zabbix_server_install_database_client: false
+    zabbix_server_database_sqlload: false
+    zabbix_server_database_timescaledb: false
+    zabbix_server_database: pgsql
+    zabbix_server_database_long: postgresql
+    zabbix_server_dbhost: "{{ db_common.server }}"
+    zabbix_server_dbname: "{{ zabbix.db_name }}"
+    zabbix_server_dbuser: "{{ zabbix.db_user }}"
+    zabbix_server_dbpassword: "{{ zabbix.db_pass }}"
+    zabbix_server_dbport: 5432
+
+- name: "ZABBIX SRV: Configure Apache"
+  ansible.builtin.include_role:
+    name: geerlingguy.apache
+
+- name: "ZABBIX SRV: Configure PHP"
+  ansible.builtin.include_role:
+    name: geerlingguy.php
+
+- name: "ZABBIX SRV: Configure WEB"
+  ansible.builtin.include_role:
+    name: community.zabbix.zabbix_web
+  vars:
+    zabbix_api_server_url: "{{ ansible_facts['fqdn'] }}"
+    zabbix_web_http_server: apache
+    zabbix_timezone: Europe/Riga
+    selinux_allow_httpd_can_connect_zabbix: true
+    selinux_allow_httpd_can_connect_ldap: false
+    selinux_allow_httpd_can_network_connect_db: true
+    zabbix_server_name: "{{ ansible_facts['fqdn'] }}"
+    zabbix_server_database: pgsql
+    zabbix_server_database_long: postgresql
+    zabbix_server_dbhost: "{{ db_common.server }}"
+    zabbix_server_dbname: "{{ zabbix.db_name }}"
+    zabbix_server_dbuser: "{{ zabbix.db_user }}"
+    zabbix_server_dbpassword: "{{ zabbix.db_pass }}"
+    zabbix_server_dbport: 5432

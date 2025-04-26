@@ -1,0 +1,24 @@
+---
+
+- name: Create defined users
+  when: proxmox_user_zabbix.failed
+  block:
+
+     - name: Create API
+       ansible.builtin.command: pveum user token add {{ item.userid }} {{ item.secret }} -privsep 1 --output-format json
+       register: api_task
+
+     - name: Write API key to dest
+       ansible.builtin.copy:
+         content: "{{ api_task }}"
+         dest: "token.txt"
+         group: root
+         owner: root
+         mode: '600'
+
+     - name: Modify API ACL
+       ansible.builtin.command: pveum acl modify {{ inner_item.path }} -token '{{ item.userid }}!{{ item.secret }}' -role {{ inner_item.role }}
+       register: api_acl_task
+       loop_control:
+         loop_var: inner_item
+       loop: "{{ item.acl }}"

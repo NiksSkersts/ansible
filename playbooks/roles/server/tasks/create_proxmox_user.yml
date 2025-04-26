@@ -1,0 +1,28 @@
+---
+
+- name: Does user@pam exist?
+  ignore_errors: true
+  community.general.proxmox_user_info:
+    api_user: "{{ proxmox.api_user }}"
+    api_password: "{{ proxmox.api_password }}"
+    api_host: "{{ proxmox.api_host }}"
+    api_token_id: "{{ proxmox.token_id | default(omit) }}"
+    api_token_secret: "{{ proxmox.token_secret | default(omit) }}"
+    user: "{{ item.user }}"
+    realm: "{{ item.realm }}"
+  register: proxmox_user_zabbix
+
+- name: Create defined users
+  when: proxmox_user_zabbix.failed
+  block:
+
+     - name: Create user
+       ansible.builtin.command: pveum user add {{ item.userid }}
+       register: user_task
+
+     - name: Modify user ACL
+       ansible.builtin.command: pveum acl modify {{ inner_item.path }} -user {{ item.userid }} -Role {{ inner_item.role }}
+       register: user_acl_task
+       loop_control:
+         loop_var: inner_item
+       loop: "{{ item.acl }}"

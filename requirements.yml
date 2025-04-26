@@ -11,14 +11,6 @@ roles:
 
 collections:
 
-  - name: https://github.com/NiksSkersts/proxmox
-    type: git
-    version: main
-
-  - name: https://github.com/NiksSkersts/vm
-    type: git
-    version: main
-
   - name: 'ansible.posix'
     version: '*'
 

@@ -1,0 +1,84 @@
+---
+# tasks file for vm-role-caddy
+
+- name: Install packages
+  ansible.builtin.apt:
+    name:
+      - certbot
+      - python3-certbot
+      - python3-certbot-dns-cloudflare
+      - python3-certbot-dns-standalone
+      - caddy
+    state: present
+    update_cache: true
+
+- name: Get Certs
+  when: get_cert_cloudflare | default(false)
+  block:
+    - name: Set ~/cloudflare.ini
+      ansible.builtin.copy:
+        dest: ~/cloudflare.ini
+        owner: root
+        group: root
+        mode: "740"
+        content: |
+          # Managed by Ansible
+          dns_cloudflare_api_token = {{ cloudflare_token }}
+
+    - name: Run Certbot
+      ansible.builtin.command:
+        /usr/bin/certbot certonly -m {{ certbot_email }} --agree-tos --dns-cloudflare --dns-cloudflare-credentials ~/cloudflare.ini --dns-cloudflare-propagation-seconds 120 -d {{ domain }}
+
+    - name: Set permissions for cloudflare certificates
+      ansible.builtin.file:
+        mode: '650'
+        owner: root
+        group: www-data
+        recurse: true
+        dest: '{{ cert_path }}'
+
+- name: Deploy backend certificates
+  when: backend_cert_defs is defined and backend_cert_defs | length>0
+  loop: '{{ backend_cert_defs }}'
+  ansible.builtin.copy:
+    owner: '{{ caddy_user }}'
+    group: '{{ caddy_group }}'
+    mode: '{{ item.mode }}'
+    dest: '{{ item.dest }}'
+    content: '{{ item.content }}'
+
+- name: Deploy CaddyFile
+  when: caddy_defs is defined
+  loop: "{{ caddy_defs }}"
+  ansible.builtin.blockinfile:
+    owner: '{{ caddy_user }}'
+    group: '{{ caddy_group }}'
+    mode: '650'
+    marker_begin: "#{{ item.domain }}"
+    marker_end: "##{{ item.domain }}"
+    dest: '{{ caddy_config_path }}'
+    create: true
+    block: |
+      https://{{ item.domain }} {
+        {{ caddy_config_tls }}
+        reverse_proxy {{ item.reverse_proxy_path }} {
+          header_up Host {host}
+          header_up X-Real-IP {remote_host}
+          header_up X-Forwarded-For {remote_host}
+          header_up X-Forwarded-Proto {scheme}
+        {% if item.transport is defined %}
+        {{ item.transport | default(omit)}}
+        {% endif %}
+        }
+        {% if item.request_body is defined %}
+        {{ item.request_body | default(omit)}}
+        {% endif %}
+        encode gzip
+        file_server
+      }
+
+- name: Restart Caddy
+  ansible.builtin.service:
+    name: caddy
+    enabled: true
+    state: restarted

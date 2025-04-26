@@ -1,0 +1,32 @@
+---
+
+- name: "DOCKER VM: Configure base"
+  ansible.builtin.include_role:
+    name: geerlingguy.docker
+
+- name: Get host info
+  community.docker.docker_host_info:
+    containers: true
+    images: true
+  register: docker_info
+
+- name: Remove all containers and their volumes
+  when: wipe | default(false)
+  community.docker.docker_container:
+    name: "{{ item }}"
+    state: absent
+    keep_volumes: false
+  loop: "{{ docker_info.containers | map(attribute='Id') }}"
+
+- name: Remove all images
+  when: wipe | default(false)
+  community.docker.docker_image:
+    name: "{{ item }}"
+    state: absent
+    force_absent: true
+  loop: "{{ docker_info.images | map(attribute='Id') }}"
+
+- name: Deploy Docker containers
+  loop: "{{ docker_defs }}"
+  when: docker_defs | length > 0
+  ansible.builtin.include_tasks: "deploy_docker_container.yml"

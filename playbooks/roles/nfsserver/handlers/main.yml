@@ -1,0 +1,4 @@
+---
+# handlers file for vm-role-nfs-server
+- name: reload nfs
+  ansible.builtin.command: 'exportfs -ra'

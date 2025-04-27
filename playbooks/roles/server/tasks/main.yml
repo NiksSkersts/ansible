@@ -11,8 +11,8 @@
   ansible.builtin.include_tasks: "create_proxmox_token.yml"
 
 - name: Creating LXCs
-  loop: "{{ groups[lxc_group] }}"
-  when: lxc_group is defined and false
+  loop: "{{ groups[lxc_group] | default([])}}"
+  when: lxc_group is defined
   ansible.builtin.include_tasks: "deploy_lxc.yml"
 
 - name: Creating VMs

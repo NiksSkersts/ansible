@@ -1,49 +1,15 @@
 ---
 
-- name: Mount drives
+- name: Mount disks
   vars:
     non_boot_disks: "{{ hostvars[inventory_hostname].diskn | default([]) | rejectattr('id', 'equalto', 1) | list }}"
-  when: non_boot_disks | length > 0
-  block:
-
-    - name: "Ensure filesystem on non-boot disk(s)"
-      ansible.builtin.filesystem:
-        fstype: ext4
-        dev: "{{ item.device_map }}"
-      loop: "{{ non_boot_disks }}"
-      loop_control:
-        loop_var: item
-
-    - name: "Create mount point directory for non-boot disk(s)"
-      ansible.builtin.file:
-        path: "/mnt/disk{{ item.id }}"
-        state: directory
-        mode: '0755'
-      loop: "{{ non_boot_disks }}"
-      loop_control:
-        loop_var: item
-
-    - name: "Mount non-boot disk(s)"
-      ansible.builtin.mount:
-        path: "/mnt/disk{{ item.id }}"
-        src: "{{ item.device_map }}"
-        fstype: ext4
-        opts: defaults
-        state: mounted
-      loop: "{{ non_boot_disks }}"
-      loop_control:
-        loop_var: item
-
-    - name: "Persist mount(s) in /etc/fstab for non-boot disk(s)"
-      ansible.builtin.mount:
-        path: "/mnt/disk{{ item.id }}"
-        src: "{{ item.device_map }}"
-        fstype: ext4
-        opts: defaults
-        state: present
-      loop: "{{ non_boot_disks }}"
-      loop_control:
-        loop_var: item
+  when:
+    - non_boot_disks | length > 0
+    - false # Not ready yet
+  ansible.builtin.include_tasks: "mount_disks.yml"
+  loop: "{{ non_boot_disks }}"
+  loop_control:
+    loop_var: item
 
 - name: Creating Users
   loop: "{{ user_defs }}"
@@ -54,10 +20,3 @@
   ansible.builtin.package:
     name: '{{ pkgs }}'
     state: present
-
-
-
-
-
-
-

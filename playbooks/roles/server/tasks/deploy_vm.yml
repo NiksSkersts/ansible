@@ -7,7 +7,7 @@
     api_host: "{{ proxmox.api_host }}"
     api_token_id: "{{ proxmox.token_id | default(omit) }}"
     api_token_secret: "{{ proxmox.token_secret | default(omit) }}"
-    vmid: "{{ hostvars[item].vm_id }}"
+    vmid: "{{ hostvars[item].id }}"
     node: "{{ ansible_hostname }}"
     name: "{{ hostvars[item].name }}"
   register: "vm_status"
@@ -82,7 +82,7 @@
         api_password: "{{ proxmox.api_password }}"
         api_host: "{{ proxmox.api_host }}"
         name: "{{ hostvars[item].name }}"
-        vmid: "{{ hostvars[item].vm_id }}"
+        vmid: "{{ hostvars[item].id }}"
         node: "{{ ansible_hostname }}"
         state: stopped
 
@@ -93,7 +93,7 @@
         api_password: "{{ proxmox.api_password }}"
         api_host: "{{ proxmox.api_host }}"
         name: "{{ hostvars[item].name }}"
-        vmid: "{{ hostvars[item].vm_id }}"
+        vmid: "{{ hostvars[item].id }}"
         node: "{{ ansible_hostname }}"
         state: absent
 
@@ -106,12 +106,13 @@
       community.general.proxmox_kvm:
         timeout: 1000
         state: 'present'
+        description: "{{ hostvars[item].description | default(omit) }}"
         api_user: "{{ proxmox.api_user }}"
         api_password: "{{ proxmox.api_password }}"
         api_host: "{{ proxmox.api_host }}"
         node: "{{ ansible_hostname }}"
         name: "{{ hostvars[item].name }}"
-        vmid: "{{ hostvars[item].vm_id }}"
+        vmid: "{{ hostvars[item].id }}"
         agent: 1
         onboot: true
         bios: 'ovmf'
@@ -139,7 +140,7 @@
         api_password: "{{ proxmox.api_password }}"
         api_host: "{{ proxmox.api_host }}"
         name: "{{ hostvars[item].name }}"
-        vmid: "{{ hostvars[item].vm_id }}"
+        vmid: "{{ hostvars[item].id }}"
         create: regular
         disk: "{{ inner_item.disk_key }}"
         backup: "{{ inner_item.disk_backup | default(omit) }}"
@@ -161,7 +162,7 @@
         api_password: "{{ proxmox.api_password }}"
         api_host: "{{ proxmox.api_host }}"
         name: "{{ hostvars[item].name }}"
-        vmid: "{{ hostvars[item].vm_id }}"
+        vmid: "{{ hostvars[item].id }}"
         interface: "net{{ inner_item.id | default('net0')}}"
         bridge: "{{ inner_item.bridge | default('vmbr0')}}"
         tag: "{{ inner_item.tag | default(0) }}"
@@ -177,7 +178,7 @@
         api_host: "{{ proxmox.api_host }}"
         node: "{{ ansible_hostname }}"
         name: "{{ hostvars[item].name }}"
-        vmid: "{{ hostvars[item].vm_id }}"
+        vmid: "{{ hostvars[item].id }}"
         update: true
         ciuser: 'root'
         cipassword: '{{ proxmox.cloudpass }}'
@@ -192,7 +193,7 @@
         api_host: "{{ proxmox.api_host }}"
         node: "{{ ansible_hostname }}"
         name: "{{ hostvars[item].name }}"
-        vmid: "{{ hostvars[item].vm_id }}"
+        vmid: "{{ hostvars[item].id }}"
         update: true
         ipconfig: '{"ipconfig{{ inner_item.id | default(0) }}":"ip={{ inner_item.ip }}/{{ inner_item.subnet }}{% if inner_item.gw is defined and inner_item.gw %},gw={{ inner_item.gw }}{%endif%}"}'
       loop_control:
@@ -212,7 +213,7 @@
         api_user: "{{ proxmox.api_user }}"
         api_password: "{{ proxmox.api_password }}"
         api_host: "{{ proxmox.api_host }}"
-        vmid: "{{ hostvars[item].vm_id }}"
+        vmid: "{{ hostvars[item].id }}"
         disk: "{{ inner_item.disk_key }}"
         size: "{{ inner_item.disk_size | default(vm.def_disk_size) }}"
         state: 'resized'
@@ -227,7 +228,7 @@
         api_user: "{{ proxmox.api_user }}"
         api_password: "{{ proxmox.api_password }}"
         api_host: "{{ proxmox.api_host }}"
-        vmid: "{{ hostvars[item].vm_id }}"
+        vmid: "{{ hostvars[item].id }}"
         state: started
 
     # It will delay this task for 60 seconds and timeout after 180.
@@ -236,7 +237,7 @@
     - name: "{{ hostvars[item].name }} | Wait for VM to start."
       when: false
       ansible.builtin.wait_for:
-        host: "{{ hostvars[item].vm_id }}"
+        host: "{{ hostvars[item].id }}"
         port: 22
         delay: 60
         timeout: 180

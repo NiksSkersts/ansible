@@ -1,0 +1,28 @@
+---
+
+- name: "Ensure filesystem on non-boot disk(s)"
+  ansible.builtin.filesystem:
+    fstype: ext4
+    dev: "{{ item.device_map }}"
+
+- name: "Create mount point directory for non-boot disk(s)"
+  ansible.builtin.file:
+    path: "/mnt/disk{{ item.id }}"
+    state: directory
+    mode: '0755'
+
+- name: "Mount non-boot disk(s)"
+  ansible.builtin.mount:
+    path: "/mnt/disk{{ item.id }}"
+    src: "{{ item.device_map }}"
+    fstype: ext4
+    opts: defaults
+    state: mounted
+
+- name: "Persist mount(s) in /etc/fstab for non-boot disk(s)"
+  ansible.builtin.mount:
+    path: "/mnt/disk{{ item.id }}"
+    src: "{{ item.device_map }}"
+    fstype: ext4
+    opts: defaults
+    state: present

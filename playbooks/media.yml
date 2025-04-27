@@ -1,0 +1,12 @@
+- name: "Configure media container"
+  hosts: media.nikssk.id.lv
+  gather_facts: true
+  
+  roles:
+    - role: base
+  tasks:
+
+    - name: Install jellfin-server
+      ansible.builtin.apt:
+        deb: https://repo.jellyfin.org/files/server/debian/latest-stable/amd64/jellyfin-server_10.10.7+deb12_amd64.deb
+        state: present

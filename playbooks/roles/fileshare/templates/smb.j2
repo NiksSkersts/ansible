@@ -1,0 +1,17 @@
+#jinja2: trim_blocks:False
+# {{ ansible_managed }}
+
+[global]
+workgroup = {{ smb_workgroup }}
+
+{% for share in samba_shares %}
+[{{ share.name }}]
+comment = {{ share.comment }}
+path = {{ share.path }}
+valid users = {% for user in share.valid_users %} {{ user }}{% endfor -%}{{''}}
+public = {{ share.public }}
+writable = {{ share.writable}}
+read only = {{ share.read_only }}
+create mask = {{ share.mode }}
+{% endfor %}
+

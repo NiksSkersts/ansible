@@ -1,0 +1,7 @@
+---
+# handlers file for fileshare
+- name: reload nfs
+  ansible.builtin.command: 'exportfs -ra'
+
+- name: reload samba
+  ansible.builtin.command: 'smbcontrol smbd reload-config'

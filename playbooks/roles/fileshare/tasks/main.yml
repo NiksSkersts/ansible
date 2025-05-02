@@ -1,0 +1,73 @@
+---
+
+
+- name: Configure Samba
+  when: samba_shares | length > 0
+  block:
+
+    - name: Ensure Samba utilities are installed.
+      ansible.builtin.apt:
+        name:
+          - samba
+        state: present
+
+    - name: Ensure directories exist
+      loop: "{{ samba_shares }}"
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        owner: "{{ item.user }}"
+        group: "{{ item.group }}"
+        mode: "{{ item.mode }}"
+        recurse: true
+        state: directory
+
+    - name: Copy configuration
+      ansible.builtin.template:
+        src: 'smb.j2'
+        dest: /etc/samba/smb.conf
+        owner: root
+        group: root
+        mode: '0644'
+      notify: reload samba
+
+    - name: Ensure Samba is running
+      ansible.builtin.service:
+        name: samba
+        state: started
+        enabled: true
+
+- name: Configure NFS
+  when: nfs_exports | length > 0
+  block:
+
+    - name: Ensure NFS utilities are installed.
+      ansible.builtin.apt:
+        name:
+          - nfs-common
+          - nfs-kernel-server
+        state: present
+
+    - name: Ensure directories exist
+      loop: "{{ nfs_exports }}"
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        owner: "{{ item.user }}"
+        group: "{{ item.group }}"
+        mode: "{{ item.mode }}"
+        recurse: true
+        state: directory
+
+    - name: Copy exports file.
+      ansible.builtin.template:
+        src: 'exports.j2'
+        dest: /etc/exports
+        owner: root
+        group: root
+        mode: '0644'
+      notify: reload nfs
+
+    - name: Ensure nfs is running.
+      ansible.builtin.service:
+        name: nfs-kernel-server
+        state: started
+        enabled: true

@@ -3,19 +3,13 @@
 - name: "Configure user: {{ item.user }}"
   block:
 
-    - name: Add group
-      ansible.builtin.group:
-        name: "{{ item.group | default(item.user) }}"
-        state: "{{ item.state | default('absent') }}"
-        gid: "{{ item.gid | default(omit) }}"
-
-    - name: Add user
+    - name: Add {{ item.user }}
       ansible.builtin.user:
         state: "{{ item.state | default('absent') }}"
         name: "{{ item.user }}"
         uid: "{{ item.uid | default(omit) }}"
         create_home: "{{ item.home | default(false) }}"
-        group: "{{ item.group | default(item.user) }}"
+        group: "{{ item.group | default(omit) }}"
         groups: "{{ item.groups | default(omit) }}"
         shell: "{{ item.shell | default('/sbin/nologin')}}"
         system: "{{ item.system | default(false) }}"

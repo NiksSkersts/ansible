@@ -150,6 +150,7 @@
         import_from: "{{ cloud_image_path if inner_item.id == 1 else omit }}"
         size: "{{ inner_item.disk_size if inner_item.id != 1 else omit }}"
         iothread : "{{ inner_item.iothread | default('true') }}"
+        replicate: "{{ inner_item.replicate | default('true') }}"
         state: "present"
       loop_control:
         loop_var: inner_item

@@ -2,7 +2,7 @@
 
 
 - name: Configure Samba
-  when: samba_shares | length > 0
+  when: samba_shares | default([]) | length > 0
   block:
 
     - name: Ensure Samba utilities are installed.
@@ -12,13 +12,14 @@
         state: present
 
     - name: Ensure directories exist
+      when: item.apply_permissions | default(false)
       loop: "{{ samba_shares }}"
       ansible.builtin.file:
         path: "{{ item.path }}"
         owner: "{{ item.user }}"
         group: "{{ item.group }}"
         mode: "{{ item.mode }}"
-        recurse: true
+        recurse: "{{ item.recurse | default('no') }}"
         state: directory
 
     - name: Copy configuration
@@ -37,7 +38,7 @@
         enabled: true
 
 - name: Configure NFS
-  when: nfs_exports | length > 0
+  when: nfs_exports | default([]) | length > 0
   block:
 
     - name: Ensure NFS utilities are installed.

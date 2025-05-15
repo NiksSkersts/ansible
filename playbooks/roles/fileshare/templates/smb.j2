@@ -10,8 +10,11 @@ comment = {{ share.comment }}
 path = {{ share.path }}
 valid users = {% for user in share.valid_users %} {{ user }}{% endfor -%}{{''}}
 public = {{ share.public }}
-writable = {{ share.writable}}
+writable = {{ share.writable }}
 read only = {{ share.read_only }}
-create mask = {{ share.mode }}
+create mask = {{ share.create_mask }}
+{% if share.inherit is defined %}
+inherit permissions ="{{ share.inherit }}"
+{% endif %}
 {% endfor %}
 

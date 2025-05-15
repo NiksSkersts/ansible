@@ -3,6 +3,12 @@
 - name: "Configure user: {{ item.user }}"
   block:
 
+    - name: Add group
+      ansible.builtin.group:
+        name: "{{ item.group | default(item.user) }}"
+        state: "{{ item.state | default('absent') }}"
+        gid: "{{ item.gid | default(omit) }}"
+
     - name: Add {{ item.user }}
       ansible.builtin.user:
         state: "{{ item.state | default('absent') }}"
